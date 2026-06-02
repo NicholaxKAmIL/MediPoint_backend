@@ -7,7 +7,7 @@ from util.config import Env
 import secrets
 
 # 引入 Routers
-from routers import dashboard, crawler
+from routers import dashboard, crawler, mock
 
 # 初始化 HTTPBasic 認證
 security = HTTPBasic()
@@ -80,6 +80,8 @@ def health_check():
 # 註冊路由
 app.include_router(dashboard.router)
 app.include_router(crawler.router)
+if Env.ENABLE_MOCK:
+    app.include_router(mock.router)
 
 if __name__ == '__main__':
     import uvicorn

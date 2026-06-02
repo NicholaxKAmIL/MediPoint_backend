@@ -14,5 +14,6 @@ class Env:
     HUGGINGFACE_TOKEN: str = os.getenv("HUGGINGFACE_TOKEN", "")
     RELOAD: bool = os.getenv("RELOAD", "").lower() == "true"
     PORT: int = int(os.getenv("PORT", 7860))    # Hugging Face Spaces 預設使用 7860 port
+    ENABLE_MOCK: bool = os.getenv("ENABLE_MOCK", "false").lower() == "true"
 
 env = Env()
