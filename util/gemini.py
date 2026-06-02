@@ -1,15 +1,18 @@
 import json
 from typing import Dict, Any, List
-import google.generativeai as genai
+from openai import OpenAI
 from util.config import env
 
 
-if not env.GEMINI_API_KEY:
+if not env.DEEPSEEK_API_KEY:
     pass
 else:
-    genai.configure(api_key=env.GEMINI_API_KEY)
+    client = OpenAI(
+        api_key=env.DEEPSEEK_API_KEY,
+        base_url="https://api.deepseek.com"
+    )
 
-MODEL_NAME = "gemini-2.0-flash" # 或使用最新的模型
+MODEL_NAME = "deepseek-chat"
 
 def generate_talking_point(topic: str, products: List[str], reason: str) -> str:
     """
@@ -19,7 +22,6 @@ def generate_talking_point(topic: str, products: List[str], reason: str) -> str:
     reason: 系統判斷的原因 (ex: 庫存告急)
     """
     try:
-        model = genai.GenerativeModel(MODEL_NAME)
         prompt = f"""
         你是一位資深藥局店長。
         情況：{topic}
@@ -29,7 +31,14 @@ def generate_talking_point(topic: str, products: List[str], reason: str) -> str:
         請生成一句「簡短、專業且具備商業說服力」的備貨或銷售建議話術給藥師看。
         限制：30字以內，繁體中文。
         """
-        response = model.generate_content(prompt)
-        return response.text.strip()
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=100,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
     except Exception:
         return "建議依照過往銷量與目前庫存水位進行彈性調整。"

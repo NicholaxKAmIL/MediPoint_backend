@@ -14,9 +14,7 @@ MONGO_URI = env.MongoDB_URL
 client = MongoClient(
     MONGO_URI,
     server_api=ServerApi("1"),
-    tls=True,
-    tlsCAFile=certifi.where(),
-    tlsAllowInvalidCertificates=True,
+    tls=False,
 )
 
 db = client["medipoint"]

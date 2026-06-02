@@ -1,5 +1,7 @@
 from db.mongo import db
 from util.gemini import generate_talking_point
+from util.config import Env
+from services import mock_data
 from datetime import datetime
 
 TARGET_DATE = "2025-10-30"
@@ -8,8 +10,11 @@ STORE_ID = "S001"
 def get_weekly_dashboard_data():
     """
     處理 Dashboard 所有的資料獲取與計算邏輯
+    當 ENABLE_MOCK=true 時直接回傳全量模擬資料 (中國福建地區)
     """
-    
+    if Env.ENABLE_MOCK:
+        return mock_data.dashboard_payload()
+
     # ==========================================
     # 1. 計算 KPI (從 daily_category_summary 撈取)
     # ==========================================
