@@ -5,6 +5,7 @@ import time
 import random
 import cloudscraper
 import re
+import sys
 from db.mongo import db
 
 # --- 設定 Headers ---
@@ -51,7 +52,7 @@ def is_health_related(text):
 # 1. PTT 爬蟲
 # ==========================================
 def crawl_ptt(board="BabyMother", limit_pages=2):
-    print(f"🚀 [PTT] 開始爬取 {board} 版...")
+    print(f"[PTT] Start crawling {board}...")
     current_url = f"https://www.ptt.cc/bbs/{board}/index.html"
     articles_list = []
     
@@ -98,9 +99,9 @@ def crawl_ptt(board="BabyMother", limit_pages=2):
                 else: break
             time.sleep(random.uniform(0.5, 1.0))
         except Exception as e:
-            print(f"❌ [PTT-{board}] 錯誤: {e}")
+            print(f"[PTT-{board}] Error: {e}")
             break
-    print(f"✅ [PTT-{board}] 完成，抓取 {len(articles_list)} 篇。")
+    print(f"[PTT-{board}] Done, crawled {len(articles_list)} articles.")
     return articles_list
 
 # ==========================================
@@ -109,7 +110,7 @@ def crawl_ptt(board="BabyMother", limit_pages=2):
 def crawl_dcard(limit=30):
     # ... (省略真實爬取嘗試，直接回傳 Mock 以確保 Demo 順暢) ...
     # 您可以保留之前的程式碼，這裡為了簡潔直接使用 Mock 邏輯
-    print(f"🚀 [Dcard] 執行爬取 (Mock Mode)...")
+    print(f"[Dcard] Running crawler (Mock Mode)...")
     MOCK_DCARD_DATA = [
         {"title": "最近流感真的好嚴重，小孩發燒三天了", "board": "parenting", "content": "看了兩次醫生都沒好..."},
         {"title": "請問大家有推薦的維他命C嗎？", "board": "health", "content": "最近辦公室都在感冒..."},
@@ -137,14 +138,14 @@ def crawl_dcard(limit=30):
         db.raw_articles.update_one({"title": mock['title']}, {"$set": article_data}, upsert=True)
         titles.append(mock['title'])
         
-    print(f"✅ [Dcard] 完成，寫入 {len(titles)} 篇資料。")
+    print(f"[Dcard] Done, wrote {len(titles)} articles.")
     return titles
 
 # ==========================================
 # 3. CDC 疾管署新聞 (新增回來)
 # ==========================================
 def crawl_cdc():
-    print(f"🚀 [CDC] 開始爬取疾管署新聞...")
+    print(f"[CDC] Start crawling CDC news...")
     # 這是疾管署的新聞稿列表頁面
     url = "https://www.cdc.gov.tw/Bulletin/List/MmgtpeidAR5Ooai4-fgHzQ"
     
@@ -183,10 +184,10 @@ def crawl_cdc():
             db.alerts.update_one({"title": title}, {"$set": alert_data}, upsert=True)
             titles.append(title)
             
-        print(f"✅ [CDC] 完成，新增 {len(titles)} 則公告。")
+        print(f"[CDC] Done, added {len(titles)} alerts.")
         
     except Exception as e:
-        print(f"❌ [CDC] 錯誤: {e}")
+        print(f"[CDC] Error: {e}")
         
     return titles
 
@@ -194,7 +195,7 @@ def crawl_cdc():
 # 4. Google News
 # ==========================================
 def crawl_google_news(query="流感 OR 腸病毒 OR 缺藥"):
-    print(f"🚀 [News] 開始爬取 Google News...")
+    print(f"[News] Start crawling Google News...")
     rss_url = f"https://news.google.com/rss/search?q={query}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
     titles = []
     try:
@@ -222,9 +223,9 @@ def crawl_google_news(query="流感 OR 腸病毒 OR 缺藥"):
             }
             db.raw_articles.update_one({"url": link}, {"$set": article_data}, upsert=True)
             titles.append(title)
-        print(f"✅ [News] 完成，新增 {len(titles)} 則新聞。")
+        print(f"[News] Done, added {len(titles)} news.")
     except Exception as e:
-        print(f"❌ [News] 錯誤: {e}")
+        print(f"[News] Error: {e}")
     return titles
 
 # ==========================================
