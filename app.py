@@ -4,6 +4,7 @@ from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
 from fastapi.openapi.utils import get_openapi
 from util.config import Env
+import os
 import secrets
 
 # 引入 Routers
@@ -56,8 +57,10 @@ origins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "https://uie47061.github.io",
-    "https://huggingface.co",
 ]
+_extra_origin = os.getenv("FRONTEND_ORIGIN", "").strip()
+if _extra_origin:
+    origins.append(_extra_origin)
 
 app.add_middleware(
     CORSMiddleware,
