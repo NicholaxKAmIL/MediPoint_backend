@@ -1,43 +1,49 @@
 """
-MediPoint 爬蟲 (中國福建地區) — 骨架階段
-- 福建 CDC (http://www.fjcdc.com.cn)  — 暫不啟用真實爬取
-- NMPA (https://www.nmpa.gov.cn)      — 待添加
-- 福建省衛健委 (http://wjw.fujian.gov.cn) — 待添加
-
-說明：台灣 PTT / Dcard 已停止維護, 後續將以福建政府公開數據為主。
-當前僅作為運行入口存在, 真實抓取 / 入庫邏輯實作後再開啟。
+MediPoint 爬虫统一入口
+- 5 个 source 并行执行 (ThreadPoolExecutor)
+- 每个 source 独立失败/降级
+- 写结果到 crawler_status
 """
+from __future__ import annotations
+import logging
+import sys
+import pathlib
+from concurrent.futures import ThreadPoolExecutor
 
-from datetime import datetime
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE_DIR))
 
-FUJIAN_SOURCES = [
-    {"name": "FJ_CDC", "url": "http://www.fjcdc.com.cn/", "agency": "福建 CDC"},
-    {"name": "FJ_WJW", "url": "http://wjw.fujian.gov.cn/", "agency": "福建省衛健委"},
-    {"name": "NMPA",   "url": "https://www.nmpa.gov.cn/", "agency": "NMPA"},
+from services.crawlers_fjwjw import crawl_fjwjw_yqgg, crawl_fjwjw_tzgg  # noqa: E402
+from services.crawlers_fjcdc import crawl_fjcdc  # noqa: E402
+from services.crawlers_nmpa import crawl_nmpa  # noqa: E402
+from services.crawlers_cdc_cn import crawl_cdc_cn_monthly, crawl_cdc_cn_flu  # noqa: E402
+from services.crawler_status import update as update_status  # noqa: E402
+
+log = logging.getLogger(__name__)
+
+_JOBS = [
+    ("fjwjw_yqgg", crawl_fjwjw_yqgg),
+    ("fjwjw_tzgg", crawl_fjwjw_tzgg),
+    ("fjcdc", crawl_fjcdc),
+    ("nmpa", crawl_nmpa),
+    ("cdc_cn_monthly", crawl_cdc_cn_monthly),
+    ("cdc_cn_flu", crawl_cdc_cn_flu),
 ]
 
 
-def _skeleton(name: str) -> int:
-    """骨架佔位 — 不寫入任何集合, 僅列印進度以保留可觀測性。"""
-    print(f"[{name}] Skeleton — real fetch not yet implemented.")
-    return 0
-
-
-def crawl_fjcdc(limit=5) -> list:
-    return []  # placeholder; real implementation will return parsed alerts
-
-
-def crawl_fj_wjw(limit=5) -> list:
-    return []
-
-
-def crawl_nmpa(limit=5) -> list:
-    return []
-
-
 def run_all_crawlers() -> dict:
-    """統一入口: 啟用福建地區政府公開數據爬蟲 (骨架階段無實際抓取)。"""
-    _skeleton("FJ-CDC")
-    _skeleton("FJ-WJW")
-    _skeleton("NMPA")
-    return {"fjcdc": 0, "fj_wjw": 0, "nmpa": 0}
+    """统一入口: 6 个 source 并行调用。"""
+    results: dict = {}
+    errors: list[str] = []
+
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        futures = {ex.submit(fn): name for name, fn in _JOBS}
+        for fut, name in futures.items():
+            try:
+                results[name] = fut.result()
+            except Exception as e:
+                errors.append(f"{name}: {type(e).__name__}: {e}")
+                results[name] = {"count": 0, "error": str(e)}
+
+    update_status(results, errors)
+    return results

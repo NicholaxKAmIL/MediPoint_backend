@@ -9,3 +9,5 @@ google-generativeai
 beautifulsoup4
 cloudscraper
 lxml
+jieba
+scikit-learn

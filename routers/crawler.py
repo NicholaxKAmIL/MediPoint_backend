@@ -1,13 +1,11 @@
-from fastapi import APIRouter, BackgroundTasks
-# 注意這裡改成 services.crawlers
-from services.crawlers import run_all_crawlers
+from fastapi import APIRouter
+
+from services.crawler_status import get_status
 
 router = APIRouter(prefix="/api/crawler", tags=["Crawler"])
 
-@router.post("/run")
-async def run_crawlers_background(background_tasks: BackgroundTasks):
-    """
-    手動觸發福建地區爬蟲 (福建 CDC / 福建衛健委 / NMPA)
-    """
-    background_tasks.add_task(run_all_crawlers)
-    return {"message": "福建地區爬蟲任務已啟動", "status": "processing"}
+
+@router.get("/status")
+def crawler_status():
+    """最近一次爬虫执行的结果 + 时间。"""
+    return get_status()
